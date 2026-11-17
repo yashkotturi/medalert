@@ -1,0 +1,17 @@
+[project]
+name = "medalert"
+version = "1.0.0"
+description = "Hospital bed and medicine availability service with an AI ops agent (MCP)"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]  # errors, pyflakes, imports, bugbear, upgrades
+ignore = ["B008"]  # FastAPI's Depends()/Header() in defaults is the intended pattern

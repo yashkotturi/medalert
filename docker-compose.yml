@@ -1,0 +1,15 @@
+# One command to run MedAlert locally:  docker compose up --build
+services:
+  api:
+    build: .
+    image: medalert:local
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env            # copy .env.example to .env first
+    volumes:
+      - medalert-data:/data   # database survives container restarts
+    restart: unless-stopped   # auto-restart if it crashes (basic self-healing)
+
+volumes:
+  medalert-data:

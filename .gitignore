@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets: never commit
+.env
+
+# Local data and generated output
+*.db
+*.db-*
+monitoring/health_log.csv
+monitoring/health_report.png
+loadtest/results*
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/

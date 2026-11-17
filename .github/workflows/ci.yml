@@ -1,0 +1,72 @@
+# CI/CD pipeline. Runs on every push and pull request.
+# Stage 1 (test) must pass before stage 2 (build) runs: "fail fast".
+# On main, the image is published to GitHub Container Registry (ghcr.io).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write   # needed only to push the image to ghcr.io
+
+jobs:
+  test:
+    name: Lint & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt httpx pytest ruff
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Run tests
+        run: pytest -v
+
+  build:
+    name: Build & publish Docker image
+    needs: test            # only runs if tests passed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t medalert:${{ github.sha }} .
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name medalert -p 8000:8000 -e MEDALERT_API_KEY=ci medalert:${{ github.sha }}
+          for i in $(seq 1 15); do
+            curl -fs http://localhost:8000/health && exit 0
+            sleep 1
+          done
+          docker logs medalert
+          exit 1
+
+      - name: Log in to GitHub Container Registry
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}   # built-in, no setup needed
+
+      - name: Push image
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          IMAGE=ghcr.io/$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          docker tag medalert:${{ github.sha }} $IMAGE:${{ github.sha }}
+          docker tag medalert:${{ github.sha }} $IMAGE:latest
+          docker push $IMAGE:${{ github.sha }}
+          docker push $IMAGE:latest

@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.pyc
+*.db
+*.db-*
+.env
+tests
+monitoring
+loadtest
+mcp_server
+docs
+.pytest_cache
+.ruff_cache
